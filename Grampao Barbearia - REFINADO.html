@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="Grampão Barber — Barbearia em Mesquita, Vila Emil, RJ. De segunda a segunda, incluindo feriados. (21) 98069-8520"/>
+<title>Grampão Barber — Mesquita, RJ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400;1,500&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" crossorigin="anonymous"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+:root{
+  --black:#0a0907;--s1:#141210;--s2:#1c1a17;--s3:#252220;
+  --hair:#2a2724;--hair2:#3a3632;
+  --gold:#C9A84C;--gold-h:#DFC06A;--gold-d:#8A7235;--gold-bg:rgba(201,168,76,0.07);
+  --ink:#F2EDE6;--ink-b:#A09890;--ink-m:#6B6460;--ink-g:#3D3A37;
+  --font-d:'Playfair Display',Georgia,serif;
+  --font-s:'DM Sans',system-ui,sans-serif;
+  --font-m:'DM Mono','Courier New',monospace;
+  --ease:cubic-bezier(.4,0,.2,1);
+}
+body{background:var(--black);color:var(--ink);font-family:var(--font-s);overflow-x:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+a{color:inherit;text-decoration:none}
+button{font-family:var(--font-s);cursor:pointer;border:none;background:none}
+img{display:block;max-width:100%}
+.reveal{opacity:0;transform:translateY(28px);transition:opacity .65s var(--ease),transform .65s var(--ease)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.d1{transition-delay:.1s}.d2{transition-delay:.2s}.d3{transition-delay:.3s}.d4{transition-delay:.4s}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--black)}
+::-webkit-scrollbar-thumb{background:var(--gold-d)}
+@media(max-width:767px){button,a{-webkit-tap-highlight-color:transparent}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback} = React;
+
+const PHONE = '5521980698520';
+const INSTAGRAM = 'https://www.instagram.com/grampao_barber/';
+const WA_MSG = encodeURIComponent('Olá! Gostaria de agendar um horário na Grampão Barber.');
+
+const SERVICES=[
+  {name:'Corte Clássico',desc:'Tesoura ou máquina com acabamento impecável e finalização com produtos premium.',price:'R$ 45',dur:'45 min'},
+  {name:'Corte + Barba',desc:'O combo completo. Corte sob medida e modelagem de barba com navalha.',price:'R$ 75',dur:'70 min'},
+  {name:'Barba Tradicional',desc:'Navalha artesanal, toalha quente e produtos de alta linha. Uma experiência.',price:'R$ 40',dur:'35 min'},
+  {name:'Degradê (Fade)',desc:'Fade progressivo com precisão milimétrica. Nossa especialidade da casa.',price:'R$ 55',dur:'50 min'},
+  {name:'Corte Infantil',desc:'Para os pequenos até 12 anos. Ambiente tranquilo e mãos experientes.',price:'R$ 35',dur:'30 min'},
+  {name:'Plano Mensal',desc:'Corte + barba ilimitados. A escolha de quem nunca para.',price:'R$ 89/mês',dur:'—'},
+];
+
+const TEAM=[
+  {name:'Grampão',role:'Fundador & Master Barber',spec:'Fade · Degradê · Clássicos'},
+  {name:'Barbeiro Sênior',role:'Sênior Barber',spec:'Barba · Navalha Artesanal'},
+  {name:'Barbeiro',role:'Barber',spec:'Cortes Modernos · Textura'},
+  {name:'Barbeiro',role:'Barber',spec:'Clássicos · Fades'},
+];
+
+/* ── hooks ── */
+function useIsMobile(){
+  const [m,setM]=useState(()=>window.innerWidth<768);
+  useEffect(()=>{
+    const h=()=>setM(window.innerWidth<768);
+    window.addEventListener('resize',h,{passive:true});
+    return()=>window.removeEventListener('resize',h);
+  },[]);
+  return m;
+}
+function useReveal(){
+  const ref=useRef(null);
+  useEffect(()=>{
+    const el=ref.current; if(!el) return;
+    const obs=new IntersectionObserver(([e])=>{
+      if(e.isIntersecting){el.classList.add('visible');obs.disconnect();}
+    },{threshold:0.06});
+    obs.observe(el);
+    return()=>obs.disconnect();
+  },[]);
+  return ref;
+}
+
+/* ── primitives ── */
+function Eyebrow({children,style={}}){
+  return <span style={{fontFamily:'var(--font-m)',fontSize:10,fontWeight:500,letterSpacing:'3px',textTransform:'uppercase',color:'var(--gold)',display:'inline-flex',alignItems:'center',gap:8,...style}}>
+    <span style={{display:'inline-block',width:20,height:1,background:'var(--gold)'}}/>
+    {children}
+  </span>;
+}
+function Placeholder({label,w='100%',h=400,style={}}){
+  const id='p'+Math.random().toString(36).slice(2,7);
+  return <div style={{width:w,height:h,background:'#110f0d',position:'relative',overflow:'hidden',flexShrink:0,...style}}>
+    <svg width="100%" height="100%" style={{position:'absolute',inset:0,opacity:.05}}>
+      <defs><pattern id={id} patternUnits="userSpaceOnUse" width="28" height="28" patternTransform="rotate(35)">
+        <line x1="0" y1="0" x2="0" y2="28" stroke="#C9A84C" strokeWidth="1"/>
+      </pattern></defs>
+      <rect width="100%" height="100%" fill={`url(#${id})`}/>
+    </svg>
+    <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <span style={{fontFamily:'var(--font-m)',fontSize:9,color:'var(--ink-m)',letterSpacing:'1px',textTransform:'uppercase',textAlign:'center',padding:'0 16px'}}>{label}</span>
+    </div>
+  </div>;
+}
+function GoldBtn({children,onClick,href,small,style={}}){
+  const [h,setH]=useState(false);
+  const base={background:h?'var(--gold-h)':'var(--gold)',color:'var(--black)',fontFamily:'var(--font-m)',fontSize:small?10:11,fontWeight:500,letterSpacing:'2px',textTransform:'uppercase',padding:small?'11px 22px':'15px 40px',border:'none',cursor:'pointer',transition:'background .25s var(--ease)',display:'inline-flex',alignItems:'center',justifyContent:'center',minHeight:small?44:50,...style};
+  if(href) return <a href={href} target="_blank" rel="noopener noreferrer" onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} style={base}>{children}</a>;
+  return <button onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} style={base}>{children}</button>;
+}
+function GhostBtn({children,onClick,href,style={}}){
+  const [h,setH]=useState(false);
+  const base={background:'transparent',color:h?'var(--ink)':'var(--ink-b)',border:`1px solid ${h?'var(--gold)':'rgba(242,237,230,0.2)'}`,fontFamily:'var(--font-m)',fontSize:11,fontWeight:500,letterSpacing:'2px',textTransform:'uppercase',padding:'14px 36px',cursor:'pointer',transition:'all .25s var(--ease)',display:'inline-flex',alignItems:'center',justifyContent:'center',minHeight:50,...style};
+  if(href) return <a href={href} target="_blank" rel="noopener noreferrer" onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} style={base}>{children}</a>;
+  return <button onClick={onClick} onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)} style={base}>{children}</button>;
+}
+
+/* ══ NAV ══ */
+function Nav({onBook}){
+  const isMobile=useIsMobile();
+  const [scrolled,setScrolled]=useState(false);
+  const [open,setOpen]=useState(false);
+  useEffect(()=>{
+    const h=()=>setScrolled(window.scrollY>60);
+    window.addEventListener('scroll',h,{passive:true});
+    return()=>window.removeEventListener('scroll',h);
+  },[]);
+  useEffect(()=>{if(!isMobile)setOpen(false);},[isMobile]);
+  const links=[['Serviços','#servicos'],['História','#historia'],['Galeria','#galeria'],['Contato','#contato']];
+  return <>
+    <nav style={{position:'fixed',top:0,left:0,right:0,zIndex:200,height:64,display:'flex',alignItems:'center',padding:isMobile?'0 20px':'0 48px',background:scrolled||open?'rgba(10,9,7,0.97)':'transparent',backdropFilter:scrolled||open?'blur(16px)':'none',borderBottom:scrolled||open?'1px solid var(--hair)':'1px solid transparent',transition:'background .4s var(--ease),border-color .4s var(--ease)'}}>
+      <div style={{flex:1,display:'flex',alignItems:'center',gap:10}}>
+        <span style={{fontFamily:'var(--font-d)',fontSize:isMobile?14:15,fontWeight:500,letterSpacing:'.5px',color:'var(--ink)'}}>Grampão Barber</span>
+      </div>
+      {isMobile
+        ? <button onClick={()=>setOpen(o=>!o)} aria-label="Menu" style={{display:'flex',flexDirection:'column',gap:5,alignItems:'center',justifyContent:'center',width:44,height:44,padding:'10px 8px'}}>
+            {[open?'rotate(45deg) translate(4px,4px)':'none','none',open?'rotate(-45deg) translate(4px,-4px)':'none'].map((tr,i)=>(
+              <span key={i} style={{display:'block',width:22,height:1.5,background:open?'var(--gold)':'var(--ink)',transition:'all .3s var(--ease)',transform:tr,opacity:i===1&&open?0:1}}/>
+            ))}
+          </button>
+        : <div style={{display:'flex',gap:40,alignItems:'center'}}>
+            {links.map(([l,h])=>(
+              <a key={l} href={h} style={{fontFamily:'var(--font-m)',fontSize:10,fontWeight:500,letterSpacing:'2.5px',textTransform:'uppercase',color:'var(--ink-b)',transition:'color .2s'}}
+                onMouseEnter={e=>e.target.style.color='var(--ink)'} onMouseLeave={e=>e.target.style.color='var(--ink-b)'}>{l}</a>
+            ))}
+            <GoldBtn onClick={onBook} small>Agendar</GoldBtn>
+          </div>
+      }
+    </nav>
+    {isMobile&&<div style={{position:'fixed',top:64,left:0,right:0,zIndex:199,background:'rgba(10,9,7,0.97)',backdropFilter:'blur(16px)',borderBottom:'1px solid var(--hair)',transform:open?'translateY(0)':'translateY(-110%)',transition:'transform .35s var(--ease)',pointerEvents:open?'auto':'none'}}>
+      {links.map(([l,h])=>(
+        <a key={l} href={h} onClick={()=>setOpen(false)} style={{display:'flex',alignItems:'center',fontFamily:'var(--font-m)',fontSize:11,fontWeight:500,letterSpacing:'2.5px',textTransform:'uppercase',color:'var(--ink-b)',padding:'0 20px',height:56,borderBottom:'1px solid var(--hair)'}}>{l}</a>
+      ))}
+      <div style={{padding:'20px'}}>
+        <GoldBtn onClick={()=>{setOpen(false);onBook();}} style={{width:'100%',justifyContent:'center'}}>Agendar Agora</GoldBtn>
+      </div>
+    </div>}
+  </>;
+}
+
+/* ══ HERO ══ */
+function Hero({onBook}){
+  const isMobile=useIsMobile();
+  const [ok,setOk]=useState(false);
+  useEffect(()=>{const t=setTimeout(()=>setOk(true),80);return()=>clearTimeout(t);},[]);
+  return <section style={{position:'relative',height:isMobile?'100svh':'100vh',minHeight:isMobile?580:640,display:'flex',flexDirection:'column',justifyContent:'flex-end',overflow:'hidden',background:'var(--black)'}}>
+    <div style={{position:'absolute',inset:0,zIndex:0}}>
+      <svg width="100%" height="100%" style={{opacity:.035,position:'absolute',inset:0}}>
+        <defs><pattern id="hg" patternUnits="userSpaceOnUse" width="48" height="48"><path d="M 48 0 L 0 0 0 48" fill="none" stroke="#C9A84C" strokeWidth="0.5"/></pattern></defs>
+        <rect width="100%" height="100%" fill="url(#hg)"/>
+      </svg>
+    </div>
+    <div style={{position:'absolute',inset:0,background:'linear-gradient(to right,rgba(10,9,7,1) 50%,rgba(10,9,7,.5) 75%,rgba(10,9,7,.1) 100%)',zIndex:3}}/>
+    <div style={{position:'absolute',inset:0,background:'linear-gradient(to top,rgba(10,9,7,1) 0%,rgba(10,9,7,.35) 40%,transparent 100%)',zIndex:3}}/>
+    {/* promo strip */}
+    <div style={{position:'absolute',top:64,left:0,right:0,zIndex:5,background:'var(--gold)',display:'flex',alignItems:'center',justifyContent:'center',flexWrap:'wrap',gap:isMobile?4:12,padding:isMobile?'9px 16px':'9px 48px',textAlign:'center'}}>
+      <span style={{fontFamily:'var(--font-m)',fontSize:isMobile?8:9,fontWeight:500,letterSpacing:'2px',textTransform:'uppercase',color:'var(--black)'}}>Novidade</span>
+      {!isMobile&&<span style={{width:1,height:10,background:'rgba(10,9,7,.3)'}}/>}
+      <span style={{fontFamily:'var(--font-s)',fontSize:isMobile?11:12,color:'var(--black)',fontWeight:400}}>Plano mensal — corte + barba ilimitados a partir de <strong>R$ 89/mês</strong></span>
+      {!isMobile&&<span style={{width:1,height:10,background:'rgba(10,9,7,.3)'}}/>}
+      <a href="#contato" style={{fontFamily:'var(--font-m)',fontSize:isMobile?8:9,fontWeight:500,letterSpacing:'1.5px',textTransform:'uppercase',color:'var(--black)',textDecoration:'underline'}}>Saiba mais</a>
+    </div>
+    <div style={{position:'relative',zIndex:4,padding:isMobile?'0 24px 88px':'0 64px 96px',maxWidth:1280}}>
+      <h1 style={{fontFamily:'var(--font-d)',fontSize:'clamp(50px,9vw,120px)',fontWeight:500,lineHeight:.92,letterSpacing:'-2px',textTransform:'uppercase',color:'var(--ink)',opacity:ok?1:0,transform:ok?'none':'translateY(32px)',transition:'all .9s .2s var(--ease)'}}>
+        GRAMPÃO<br/>
+        <span style={{fontFamily:'var(--font-d)',fontStyle:'italic',fontSize:'clamp(28px,5.5vw,72px)',fontWeight:400,letterSpacing:'-1px',textTransform:'none',color:'var(--ink-b)'}}>Barbearia</span>
+      </h1>
+      <div style={{marginTop:24,marginBottom:36,opacity:ok?1:0,transform:ok?'none':'translateY(20px)',transition:'all .8s .4s var(--ease)'}}>
+        <p style={{fontFamily:'var(--font-s)',fontSize:'clamp(14px,1.4vw,17px)',fontWeight:300,color:'var(--ink-b)',lineHeight:1.75,maxWidth:360}}>
+          Do quintal à barbearia. Da coragem ao sucesso.<br/>
+          <span style={{color:'var(--ink-m)',fontSize:'clamp(12px,1.1vw,14px)'}}>7 anos de caminhada em Vila Emil, Mesquita.</span>
+        </p>
+      </div>
+      <div style={{display:'flex',gap:12,flexWrap:'wrap',opacity:ok?1:0,transform:ok?'none':'translateY(16px)',transition:'all .8s .55s var(--ease)'}}>
+        <GoldBtn onClick={onBook} style={isMobile?{flex:1,justifyContent:'center'}:{}}>Agendar Agora</GoldBtn>
+        <GhostBtn href={`https://wa.me/${PHONE}?text=${WA_MSG}`} style={isMobile?{flex:1,justifyContent:'center'}:{}}>WhatsApp</GhostBtn>
+      </div>
+    </div>
+    {!isMobile&&<div style={{position:'absolute',right:48,bottom:32,zIndex:4,display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
+      <div style={{width:1,height:56,background:'linear-gradient(to bottom,transparent,var(--gold))'}}/>
+      <span style={{fontFamily:'var(--font-m)',fontSize:8,color:'var(--ink-m)',letterSpacing:'2px',writingMode:'vertical-rl',textTransform:'uppercase'}}>Scroll</span>
+    </div>}
+  </section>;
+}
+
+/* ══ STATS ══ */
+function StatsBand(){
+  const isMobile=useIsMobile();
+  const ref=useReveal();
+  const stats=[['7+','Anos de caminhada'],['50k+','Clientes atendidos'],['4','Barbeiros em atividade'],['★ 4.9','Avaliação média']];
+  return <div ref={ref} className="reveal" style={{background:'var(--s1)',borderTop:'1px solid var(--hair)',borderBottom:'1px solid var(--hair)',padding:isMobile?'28px 20px':'48px 64px',display:'grid',gridTemplateColumns:isMobile?'1fr 1fr':'repeat(4,1fr)'}}>
+    {stats.map(([v,l],i)=>(
+      <div key={l} className={`d${i+1}`} style={{padding:isMobile?'16px 12px':'24px 32px',textAlign:'center',borderRight:isMobile?(i%2===0?'1px solid var(--hair)':'none'):(i<3?'1px solid var(--hair)':'none'),borderBottom:isMobile?(i<2?'1px solid var(--hair)':'none'):'none'}}>
+        <div style={{fontFamily:'var(--font-d)',fontSize:'clamp(26px,3vw,48px)',fontWeight:500,color:'var(--gold)',lineHeight:1,marginBottom:8}}>{v}</div>
+        <div style={{fontFamily:'var(--font-m)',fontSize:isMobile?8:9,letterSpacing:'2px',textTransform:'uppercase',color:'var(--ink-m)'}}>{l}</div>
+      </div>
+    ))}
+  </div>;
+}
+
+/* ══ SERVICES ══ */
+function ServiceCard({s,onBook,idx}){
+  const [hov,setHov]=useState(false);
+  const ref=useReveal();
+  return <div ref={ref} className={`reveal d${(idx%3)+1}`} onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} onClick={()=>onBook(s)}
+    style={{background:hov?'var(--s2)':'var(--s1)',border:`1px solid ${hov?'var(--gold-d)':'var(--hair)'}`,padding:'28px 24px',cursor:'pointer',transition:'background .3s var(--ease),border-color .3s var(--ease)',display:'flex',flexDirection:'column',gap:16,minHeight:180}}>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:12}}>
+      <span style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'2px',textTransform:'uppercase',color:'var(--ink-m)'}}>{s.dur}</span>
+      <span style={{fontFamily:'var(--font-d)',fontSize:22,fontWeight:500,color:'var(--gold)',lineHeight:1,flexShrink:0}}>{s.price}</span>
+    </div>
+    <div style={{flex:1}}>
+      <h3 style={{fontFamily:'var(--font-d)',fontSize:20,fontWeight:500,color:'var(--ink)',marginBottom:8,lineHeight:1.2}}>{s.name}</h3>
+      <p style={{fontFamily:'var(--font-s)',fontSize:13,fontWeight:300,color:'var(--ink-b)',lineHeight:1.65}}>{s.desc}</p>
+    </div>
+    <div style={{fontFamily:'var(--font-m)',fontSize:9,fontWeight:500,letterSpacing:'2px',textTransform:'uppercase',color:hov?'var(--gold)':'var(--ink-g)',transition:'color .3s var(--ease)',display:'flex',alignItems:'center',gap:8}}>
+      Agendar <span style={{fontSize:13}}>→</span>
+    </div>
+  </div>;
+}
+function Services({onBook}){
+  const isMobile=useIsMobile();
+  const ref=useReveal();
+  return <section id="servicos" style={{padding:isMobile?'72px 20px':'120px 64px',background:'var(--black)'}}>
+    <div style={{maxWidth:1280,margin:'0 auto'}}>
+      <div ref={ref} className="reveal" style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:isMobile?24:64,alignItems:'flex-end',marginBottom:isMobile?40:64,paddingBottom:40,borderBottom:'1px solid var(--hair)'}}>
+        <div>
+          <Eyebrow style={{marginBottom:20}}>O que oferecemos</Eyebrow>
+          <h2 style={{fontFamily:'var(--font-d)',fontSize:'clamp(32px,4.5vw,64px)',fontWeight:500,lineHeight:1.05,letterSpacing:'-1px',textTransform:'uppercase',color:'var(--ink)',marginTop:16}}>Nossos<br/>Serviços</h2>
+        </div>
+        <p style={{fontFamily:'var(--font-s)',fontSize:15,fontWeight:300,color:'var(--ink-b)',lineHeight:1.8,maxWidth:360}}>Cada visita é uma cerimônia. Técnicas refinadas, produtos de qualidade e o respeito que você merece.</p>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'repeat(3,1fr)',gap:2}}>
+        {SERVICES.map((s,i)=><ServiceCard key={s.name} s={s} onBook={onBook} idx={i}/>)}
+      </div>
+    </div>
+  </section>;
+}
+
+/* ══ GOLD BAND ══ */
+function GoldBand(){
+  const isMobile=useIsMobile();
+  const ref=useReveal();
+  return <div ref={ref} className="reveal" style={{background:'var(--gold)',padding:isMobile?'56px 24px':'80px 64px',display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center',gap:14}}>
+    <span style={{fontFamily:'var(--font-d)',fontStyle:'italic',fontSize:'clamp(19px,2.8vw,42px)',fontWeight:400,color:'var(--black)',lineHeight:1.35,maxWidth:760}}>
+      "Se o apelido nasceu no improviso, a barbearia nasceu na coragem."
+    </span>
+    <span style={{fontFamily:'var(--font-m)',fontSize:isMobile?8:9,letterSpacing:'2.5px',textTransform:'uppercase',color:'rgba(10,9,7,.55)',marginTop:4}}>Grampão Barber · Mesquita, RJ</span>
+  </div>;
+}
+
+/* ══ HISTÓRIA ══ */
+function HistoriaCard({s,idx}){
+  const ref=useReveal();
+  return <div ref={ref} className={`reveal d${idx+1}`} style={{background:'var(--black)',border:'1px solid var(--hair)',padding:'32px 28px',display:'flex',flexDirection:'column',gap:20}}>
+    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+      <Eyebrow>{s.tag}</Eyebrow>
+      <span style={{fontSize:22,opacity:.65}}>{s.icon}</span>
+    </div>
+    <h3 style={{fontFamily:'var(--font-d)',fontSize:'clamp(17px,2vw,24px)',fontWeight:500,color:'var(--ink)',lineHeight:1.2,letterSpacing:'-.3px'}}>{s.title}</h3>
+    <p style={{fontFamily:'var(--font-s)',fontSize:14,fontWeight:300,color:'var(--ink-b)',lineHeight:1.8,flex:1}}>{s.text}</p>
+  </div>;
+}
+function Historia(){
+  const isMobile=useIsMobile();
+  const ref=useReveal();
+  const ref2=useReveal();
+  const ref3=useReveal();
+  const stories=[
+    {tag:'O apelido',title:'Como nasceu o Grampão',icon:'💬',text:'Tinha uns 18 pra 19 anos, trabalhando na Cristal Grafite. Um colega — gente boa, mas com dificuldade na fala — tentou soltar um "grandão" ao ver aquele poste humano passando. O que saiu foi um sonoro "GRAMPÃO!". Na hora rolou a risada, mas o apelido grudou igual cola industrial. Mais de 20 anos depois, tem gente que nem sabe o nome de batismo — só conhece o Grampão.'},
+    {tag:'A origem',title:'Do quintal ao negócio',icon:'✂️',text:'O desemprego bateu na porta — e em vez de desanimar, ele decidiu agir. Se matriculou no curso de barbeiro da Faculdade Simonsen, em Padre Miguel. Dois meses de curso foram suficientes pra acender a ideia que mudaria tudo. Começou do jeito raiz, no quintal da casa dos pais, sem luxo, só com dedicação e foco. Cada corte era uma oportunidade. Cada cliente era tratado como único. E assim o nome Grampão foi virando marca.'},
+    {tag:'A referência',title:'A lição do Senhor Elias',icon:'⭐',text:'Todo barbeiro precisa de uma referência. A do Grampão sempre foi o Senhor Elias — que no início colocava as crianças sentadas em baldes improvisados pra conseguir trabalhar. Sonhou por 8 anos com uma cadeira infantil de verdade. Hoje tem mais de 12 barbearias no Brasil. Essa história virou inspiração: nunca pare de aprender, estude quem já venceu, e tenha a coragem de continuar quando ninguém acredita.'},
+  ];
+  return <section id="historia" style={{padding:isMobile?'72px 20px':'120px 64px',background:'var(--s1)'}}>
+    <div style={{maxWidth:1280,margin:'0 auto'}}>
+      <div ref={ref} className="reveal" style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:isMobile?24:64,alignItems:'flex-end',marginBottom:isMobile?48:72,paddingBottom:40,borderBottom:'1px solid var(--hair)'}}>
+        <div>
+          <Eyebrow style={{marginBottom:20}}>Nossa história</Eyebrow>
+          <h2 style={{fontFamily:'var(--font-d)',fontSize:'clamp(32px,4.5vw,64px)',fontWeight:500,lineHeight:1.05,letterSpacing:'-1px',textTransform:'uppercase',color:'var(--ink)',marginTop:16}}>7 Anos de<br/>Caminhada</h2>
+        </div>
+        <p style={{fontFamily:'var(--font-s)',fontSize:15,fontWeight:300,color:'var(--ink-b)',lineHeight:1.8,maxWidth:380}}>De desempregado a empreendedor. De iniciante a referência. Às vezes, a melhor oportunidade nasce justamente no momento mais difícil.</p>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'repeat(3,1fr)',gap:2,marginBottom:2}}>
+        {stories.map((s,i)=><HistoriaCard key={s.tag} s={s} idx={i}/>)}
+      </div>
+      {/* Values strip */}
+      <div ref={ref2} className="reveal" style={{background:'var(--black)',border:'1px solid var(--hair)',borderTop:'none',padding:isMobile?'32px 20px':'44px 48px'}}>
+        <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'repeat(3,1fr)',gap:isMobile?28:0}}>
+          {[
+            ['Constância','Sucesso é construído no detalhe, na constância e na coragem de continuar mesmo quando ninguém acredita.'],
+            ['Respeito','Barbearia não é só corte de cabelo. É atendimento, parceria e respeito com cada pessoa que entra.'],
+            ['Agilidade','4 barbeiros em atividade. De segunda a segunda, incluindo feriados. Porque seu tempo é valioso.'],
+          ].map(([t,d],i)=>(
+            <div key={t} style={{paddingLeft:(!isMobile&&i>0)?44:0,borderLeft:(!isMobile&&i>0)?'1px solid var(--hair)':'none',borderTop:(isMobile&&i>0)?'1px solid var(--hair)':'none',paddingTop:(isMobile&&i>0)?24:0}}>
+              <div style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'2px',textTransform:'uppercase',color:'var(--gold)',marginBottom:12,paddingBottom:10,borderBottom:'1px solid var(--gold-d)',display:'inline-block'}}>{t}</div>
+              <p style={{fontFamily:'var(--font-s)',fontSize:14,fontWeight:300,color:'var(--ink-b)',lineHeight:1.75}}>{d}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Quote */}
+      <div ref={ref3} className="reveal d2" style={{marginTop:2,background:'var(--s2)',borderLeft:'3px solid var(--gold)',padding:isMobile?'28px 20px':'36px 44px'}}>
+        <p style={{fontFamily:'var(--font-d)',fontStyle:'italic',fontSize:'clamp(15px,2vw,23px)',color:'var(--ink-b)',lineHeight:1.65,maxWidth:720}}>
+          "Mais do que cortar cabelo — fazer você sair bem consigo mesmo, sem complicação, sem perder o dia inteiro esperando. Essa sempre foi a missão da Grampão Barber."
+        </p>
+        <span style={{display:'block',marginTop:14,fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'2px',textTransform:'uppercase',color:'var(--ink-m)'}}>— Grampão, fundador</span>
+      </div>
+    </div>
+  </section>;
+}
+
+/* ══ GALLERY ══ */
+const GALLERY_ITEMS=[
+  {label:'corte fade clássico',cols:2,rows:2},
+  {label:'barba modelada',cols:1,rows:1},
+  {label:'ambiente da barbearia',cols:1,rows:1},
+  {label:'resultado final',cols:1,rows:1},
+  {label:'navalha artesanal',cols:1,rows:1},
+  {label:'corte degradê',cols:2,rows:1},
+];
+function GalleryItem({g,idx,mobile}){
+  const ref=useReveal();
+  if(mobile) return <div ref={ref} className={`reveal d${(idx%2)+1}`}><Placeholder label={g.label} w="100%" h={156}/></div>;
+  return <div ref={ref} className={`reveal d${(idx%4)+1}`} style={{gridColumn:`span ${g.cols}`,gridRow:`span ${g.rows}`}}>
+    <Placeholder label={g.label} w="100%" h="100%" style={{height:'100%'}}/>
+  </div>;
+}
+function Gallery(){
+  const isMobile=useIsMobile();
+  const ref=useReveal();
+  return <section id="galeria" style={{padding:isMobile?'72px 20px':'120px 64px',background:'var(--black)'}}>
+    <div style={{maxWidth:1280,margin:'0 auto'}}>
+      <div ref={ref} className="reveal" style={{marginBottom:isMobile?40:64,paddingBottom:40,borderBottom:'1px solid var(--hair)',display:'flex',flexDirection:isMobile?'column':'row',justifyContent:'space-between',alignItems:isMobile?'flex-start':'flex-end',gap:16}}>
+        <div>
+          <Eyebrow style={{marginBottom:20}}>Nosso trabalho</Eyebrow>
+          <h2 style={{fontFamily:'var(--font-d)',fontSize:'clamp(32px,4vw,56px)',fontWeight:500,lineHeight:1.05,letterSpacing:'-1px',textTransform:'uppercase',color:'var(--ink)',marginTop:16}}>Galeria</h2>
+        </div>
+        <a href={INSTAGRAM} target="_blank" rel="noopener noreferrer" style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'2px',textTransform:'uppercase',color:'var(--ink-m)',display:'flex',alignItems:'center',gap:8,minHeight:44,transition:'color .2s'}}
+          onMouseEnter={e=>e.currentTarget.style.color='var(--gold)'} onMouseLeave={e=>e.currentTarget.style.color='var(--ink-m)'}>@grampao_barber →</a>
+      </div>
+      {isMobile
+        ? <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:2}}>{GALLERY_ITEMS.map((g,i)=><GalleryItem key={i} g={g} idx={i} mobile/>)}</div>
+        : <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gridTemplateRows:'repeat(2,220px)',gap:2}}>{GALLERY_ITEMS.map((g,i)=><GalleryItem key={i} g={g} idx={i}/>)}</div>
+      }
+      <div style={{marginTop:24,textAlign:'center'}}>
+        <GhostBtn href={INSTAGRAM} style={isMobile?{width:'100%',justifyContent:'center'}:{}}>Ver mais no Instagram →</GhostBtn>
+      </div>
+    </div>
+  </section>;
+}
+
+/* ══ TEAM ══ */
+function TeamCard({b,idx}){
+  const ref=useReveal();
+  const isMobile=useIsMobile();
+  return <div ref={ref} className={`reveal d${idx+1}`} style={{background:'var(--black)',border:'1px solid var(--hair)'}}>
+    <Placeholder label="foto do barbeiro" w="100%" h={isMobile?180:280} style={{borderBottom:'1px solid var(--hair)'}}/>
+    <div style={{padding:'18px 16px'}}>
+      <div style={{fontFamily:'var(--font-m)',fontSize:8,letterSpacing:'2px',textTransform:'uppercase',color:'var(--gold)',marginBottom:8}}>{b.role}</div>
+      <h3 style={{fontFamily:'var(--font-d)',fontSize:isMobile?14:17,fontWeight:500,color:'var(--ink)',marginBottom:4,lineHeight:1.3}}>{b.name}</h3>
+      <p style={{fontFamily:'var(--font-s)',fontSize:11,fontWeight:300,color:'var(--ink-b)',lineHeight:1.6,marginTop:6}}>{b.spec}</p>
+    </div>
+  </div>;
+}
+function Team(){
+  const isMobile=useIsMobile();
+  const ref=useReveal();
+  return <section id="equipe" style={{padding:isMobile?'72px 20px':'120px 64px',background:'var(--s1)'}}>
+    <div style={{maxWidth:1280,margin:'0 auto'}}>
+      <div ref={ref} className="reveal" style={{display:'flex',flexDirection:isMobile?'column':'row',justifyContent:'space-between',alignItems:isMobile?'flex-start':'flex-end',gap:isMobile?16:0,marginBottom:isMobile?40:64,paddingBottom:40,borderBottom:'1px solid var(--hair)'}}>
+        <div>
+          <Eyebrow style={{marginBottom:20}}>Quem faz acontecer</Eyebrow>
+          <h2 style={{fontFamily:'var(--font-d)',fontSize:'clamp(32px,4vw,56px)',fontWeight:500,lineHeight:1.05,letterSpacing:'-1px',textTransform:'uppercase',color:'var(--ink)',marginTop:16}}>A Equipe</h2>
+        </div>
+        <p style={{fontFamily:'var(--font-s)',fontSize:14,fontWeight:300,color:'var(--ink-m)',maxWidth:320,lineHeight:1.75,textAlign:isMobile?'left':'right'}}>
+          4 barbeiros, todos moradores de Mesquita. Cada um trouxe junto sua experiência e seus clientes fiéis. Isso se chama confiança.
+        </p>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr 1fr':'repeat(4,1fr)',gap:2}}>
+        {TEAM.map((b,i)=><TeamCard key={i} b={b} idx={i}/>)}
+      </div>
+    </div>
+  </section>;
+}
+
+/* ══ LOCATION ══ */
+function Location(){
+  const isMobile=useIsMobile();
+  const ref=useReveal();
+  const ref2=useReveal();
+  const mapsQ='Rua+Nilza+Gurgel+225+Vila+Emil+Mesquita+RJ';
+  return <section id="contato" style={{padding:isMobile?'72px 20px':'120px 64px',background:'var(--black)',borderTop:'1px solid var(--hair)'}}>
+    <div style={{maxWidth:1280,margin:'0 auto',display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:isMobile?48:96,alignItems:'flex-start'}}>
+      <div ref={ref} className="reveal">
+        <Eyebrow style={{marginBottom:20}}>Onde estamos</Eyebrow>
+        <h2 style={{fontFamily:'var(--font-d)',fontSize:'clamp(28px,3.5vw,52px)',fontWeight:500,lineHeight:1.1,letterSpacing:'-1px',textTransform:'uppercase',color:'var(--ink)',margin:'16px 0 40px'}}>Venha nos<br/>Visitar</h2>
+        {[
+          {l:'Endereço',v:'Rua Nilza Gurgel, 225 — Vila Emil\nMesquita, Rio de Janeiro, RJ'},
+          {l:'Horário',v:'Segunda a Sábado: 9h – 20h\nDomingo & Feriados: funcionamos!\nEstamos abertos de segunda a segunda.'},
+          {l:'WhatsApp',v:'(21) 98069-8520',link:`https://wa.me/${PHONE}?text=${WA_MSG}`},
+          {l:'Instagram',v:'@grampao_barber',link:INSTAGRAM},
+          {l:'CNPJ',v:'35.589.797/0001-99'},
+        ].map(({l,v,link})=>(
+          <div key={l} style={{borderBottom:'1px solid var(--hair)',paddingBottom:20,marginBottom:20}}>
+            <span style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'2px',textTransform:'uppercase',color:'var(--gold)',display:'block',marginBottom:8}}>{l}</span>
+            {link
+              ? <a href={link} target="_blank" rel="noopener noreferrer" style={{fontFamily:'var(--font-s)',fontSize:15,fontWeight:300,color:'var(--ink-b)',lineHeight:1.75,whiteSpace:'pre-line',display:'block',transition:'color .2s'}}
+                  onMouseEnter={e=>e.currentTarget.style.color='var(--gold)'} onMouseLeave={e=>e.currentTarget.style.color='var(--ink-b)'}>{v} →</a>
+              : <p style={{fontFamily:'var(--font-s)',fontSize:15,fontWeight:300,color:'var(--ink-b)',lineHeight:1.75,whiteSpace:'pre-line'}}>{v}</p>
+            }
+          </div>
+        ))}
+        <GoldBtn href={`https://wa.me/${PHONE}?text=${WA_MSG}`} style={{marginTop:8}}>Agendar pelo WhatsApp</GoldBtn>
+      </div>
+      <div ref={ref2} className="reveal d2">
+        <div style={{width:'100%',height:isMobile?260:420,overflow:'hidden',border:'1px solid var(--hair)'}}>
+          <iframe
+            title="Grampão Barber — Vila Emil, Mesquita"
+            width="100%"
+            height="100%"
+            style={{border:0,display:'block',filter:'invert(92%) hue-rotate(180deg) saturate(0.75) brightness(0.92)'}}
+            loading="lazy"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=-43.480%2C-22.795%2C-43.453%2C-22.775&layer=mapnik&marker=-22.7851%2C-43.4666"
+          />
+        </div>
+        <div style={{background:'var(--s1)',border:'1px solid var(--hair)',borderTop:'none',padding:'14px 20px',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <span style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'1.5px',textTransform:'uppercase',color:'var(--ink-m)'}}>Vila Emil · Mesquita · RJ</span>
+          <a href={`https://maps.google.com/maps?q=${mapsQ}`} target="_blank" rel="noopener noreferrer" style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'1.5px',textTransform:'uppercase',color:'var(--gold)',transition:'color .2s'}}
+            onMouseEnter={e=>e.currentTarget.style.color='var(--gold-h)'} onMouseLeave={e=>e.currentTarget.style.color='var(--gold)'}>Abrir no Maps →</a>
+        </div>
+      </div>
+    </div>
+  </section>;
+}
+
+/* ══ FOOTER ══ */
+function Footer(){
+  const isMobile=useIsMobile();
+  return <footer style={{background:'var(--s1)',borderTop:'1px solid var(--hair)',padding:isMobile?'48px 20px':'56px 64px'}}>
+    <div style={{maxWidth:1280,margin:'0 auto',display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr 1fr',gap:isMobile?40:64,marginBottom:40}}>
+      <div>
+        <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:16}}><span style={{fontFamily:'var(--font-d)',fontSize:14,fontWeight:500,color:'var(--ink-b)'}}>Grampão Barber</span></div>
+        <p style={{fontFamily:'var(--font-s)',fontSize:13,fontWeight:300,color:'var(--ink-m)',lineHeight:1.7,maxWidth:220}}>Barbearia premium em Mesquita, Vila Emil. De segunda a segunda, incluindo feriados.</p>
+        <p style={{fontFamily:'var(--font-m)',fontSize:9,color:'var(--ink-g)',marginTop:14,letterSpacing:'1px'}}>Desde novembro de 2019</p>
+      </div>
+      <div>
+        <div style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'2px',textTransform:'uppercase',color:'var(--gold)',marginBottom:16}}>Navegação</div>
+        {[['Serviços','#servicos'],['História','#historia'],['Galeria','#galeria'],['Equipe','#equipe'],['Contato','#contato']].map(([l,h])=>(
+          <a key={l} href={h} style={{display:'flex',alignItems:'center',fontFamily:'var(--font-s)',fontSize:13,fontWeight:300,color:'var(--ink-m)',marginBottom:10,minHeight:32,transition:'color .2s'}}
+            onMouseEnter={e=>e.currentTarget.style.color='var(--gold)'} onMouseLeave={e=>e.currentTarget.style.color='var(--ink-m)'}>{l}</a>
+        ))}
+      </div>
+      <div>
+        <div style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'2px',textTransform:'uppercase',color:'var(--gold)',marginBottom:16}}>Contato</div>
+        {[
+          ['WhatsApp',`https://wa.me/${PHONE}`,'(21) 98069-8520'],
+          ['Instagram',INSTAGRAM,'@grampao_barber'],
+          ['Google Maps',`https://maps.google.com/maps?q=Rua+Nilza+Gurgel+225+Mesquita+RJ`,'Ver no mapa'],
+        ].map(([l,h,v])=>(
+          <a key={l} href={h} target="_blank" rel="noopener noreferrer" style={{display:'block',fontFamily:'var(--font-s)',fontSize:13,fontWeight:300,color:'var(--ink-m)',marginBottom:12,minHeight:32,transition:'color .2s'}}
+            onMouseEnter={e=>e.currentTarget.style.color='var(--gold)'} onMouseLeave={e=>e.currentTarget.style.color='var(--ink-m)'}>
+            <span style={{fontFamily:'var(--font-m)',fontSize:8,letterSpacing:'1.5px',textTransform:'uppercase',color:'var(--ink-g)',marginRight:8}}>{l}</span>{v}
+          </a>
+        ))}
+      </div>
+    </div>
+    <div style={{borderTop:'1px solid var(--hair)',paddingTop:24,display:'flex',flexDirection:isMobile?'column':'row',justifyContent:'space-between',alignItems:isMobile?'flex-start':'center',gap:8}}>
+      <span style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'1.5px',color:'var(--ink-g)'}}>© 2026 GRAMPÃO BARBER — MESQUITA, RIO DE JANEIRO</span>
+      <span style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'1px',color:'var(--ink-g)'}}>CNPJ 35.589.797/0001-99</span>
+    </div>
+  </footer>;
+}
+
+/* ══ WA FLOAT ══ */
+function WAFloat(){
+  const [h,setH]=useState(false);
+  return <a href={`https://wa.me/${PHONE}?text=${WA_MSG}`} target="_blank" rel="noopener noreferrer" aria-label="Agendar pelo WhatsApp"
+    onMouseEnter={()=>setH(true)} onMouseLeave={()=>setH(false)}
+    style={{position:'fixed',bottom:24,right:20,zIndex:300,width:54,height:54,background:h?'var(--gold-h)':'var(--gold)',display:'flex',alignItems:'center',justifyContent:'center',transition:'background .25s var(--ease),transform .25s var(--ease)',transform:h?'scale(1.08)':'scale(1)',boxShadow:'0 4px 24px rgba(201,168,76,0.25)'}}>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="var(--black)">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+  </a>;
+}
+
+/* ══ BOOKING MODAL ══ */
+const TIME_SLOTS=['09:00','09:45','10:30','11:15','14:00','14:45','15:30','16:15','17:00','17:45'];
+const DAYS=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const MONTHS=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+function BookingModal({onClose,initService}){
+  const isMobile=useIsMobile();
+  const [step,setStep]=useState(1);
+  const [sel,setSel]=useState({service:initService||null,barber:null,date:null,time:null});
+  const [form,setForm]=useState({name:'',phone:''});
+  const [done,setDone]=useState(false);
+  const today=new Date();
+  const dates=Array.from({length:14},(_,i)=>{const d=new Date(today);d.setDate(today.getDate()+i+1);return d;});
+  useEffect(()=>{
+    const h=e=>{if(e.key==='Escape')onClose();};
+    window.addEventListener('keydown',h);
+    document.body.style.overflow='hidden';
+    return()=>{window.removeEventListener('keydown',h);document.body.style.overflow='';};
+  },[onClose]);
+  const canNext=()=>{
+    if(step===1)return!!sel.service;
+    if(step===2)return!!sel.barber;
+    if(step===3)return!!sel.date&&!!sel.time;
+    if(step===4)return form.name.length>2&&form.phone.length>8;
+    return false;
+  };
+  const buildWA=()=>{
+    const d=sel.date?`${sel.date.getDate()}/${sel.date.getMonth()+1}`:'';
+    const msg=`Olá! Quero confirmar:\n\n*Serviço:* ${sel.service?.name}\n*Profissional:* ${sel.barber?.name}\n*Data:* ${d} às ${sel.time}\n*Nome:* ${form.name}\n*Tel:* ${form.phone}`;
+    return `https://wa.me/${PHONE}?text=${encodeURIComponent(msg)}`;
+  };
+  const STEPS=['Serviço','Profissional','Horário','Seus dados'];
+  return <div onClick={e=>e.target===e.currentTarget&&onClose()}
+    style={{position:'fixed',inset:0,zIndex:400,background:'rgba(10,9,7,.92)',backdropFilter:'blur(12px)',display:'flex',alignItems:isMobile?'flex-end':'center',justifyContent:'center',padding:isMobile?0:24}}>
+    <div style={{background:'var(--s2)',border:'1px solid var(--hair2)',width:'100%',maxWidth:560,height:isMobile?'92%':'auto',maxHeight:isMobile?'92%':'90vh',overflowY:'auto',borderRadius:isMobile?'12px 12px 0 0':0,position:'relative'}}>
+      <div style={{padding:isMobile?'20px 20px 0':'28px 36px 0',borderBottom:'1px solid var(--hair)',paddingBottom:20,position:'sticky',top:0,background:'var(--s2)',zIndex:1}}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16}}>
+          <div><Eyebrow>Grampão Barber</Eyebrow><h2 style={{fontFamily:'var(--font-d)',fontSize:24,fontWeight:500,color:'var(--ink)',marginTop:8,letterSpacing:'-.3px'}}>Agendamento</h2></div>
+          <button onClick={onClose} aria-label="Fechar" style={{color:'var(--ink-m)',width:44,height:44,display:'flex',alignItems:'center',justifyContent:'center',fontSize:24}}>×</button>
+        </div>
+        {!done&&<div style={{display:'flex',gap:2}}>
+          {STEPS.map((s,i)=>(
+            <div key={s} style={{flex:1}}>
+              <div style={{height:2,background:i+1<=step?'var(--gold)':'var(--hair)',marginBottom:6,transition:'background .4s var(--ease)'}}/>
+              <span style={{fontFamily:'var(--font-m)',fontSize:isMobile?7:8,letterSpacing:'1px',textTransform:'uppercase',color:i+1<=step?'var(--gold)':'var(--ink-g)'}}>{s}</span>
+            </div>
+          ))}
+        </div>}
+      </div>
+      <div style={{padding:isMobile?'20px 20px 32px':'28px 36px 32px'}}>
+        {done
+          ? <BookingDone sel={sel} form={form} waUrl={buildWA()} onClose={onClose}/>
+          : <>
+            {step===1&&<Step1 sel={sel} setSel={setSel}/>}
+            {step===2&&<Step2 sel={sel} setSel={setSel}/>}
+            {step===3&&<Step3 sel={sel} setSel={setSel} dates={dates}/>}
+            {step===4&&<Step4 sel={sel} form={form} setForm={setForm}/>}
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginTop:28,paddingTop:20,borderTop:'1px solid var(--hair)',gap:12}}>
+              <button onClick={()=>step>1?setStep(s=>s-1):onClose()} style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'2px',textTransform:'uppercase',color:'var(--ink-m)',padding:'12px 0',minHeight:44}}>
+                {step>1?'← Voltar':'Cancelar'}
+              </button>
+              <GoldBtn onClick={()=>step<4?setStep(s=>s+1):setDone(true)} style={{opacity:canNext()?1:.35,cursor:canNext()?'pointer':'not-allowed',padding:'13px 28px'}}>
+                {step<4?'Próximo →':'Confirmar'}
+              </GoldBtn>
+            </div>
+          </>
+        }
+      </div>
+    </div>
+  </div>;
+}
+function Step1({sel,setSel}){
+  return <div>
+    <p style={{fontFamily:'var(--font-s)',fontSize:14,fontWeight:300,color:'var(--ink-b)',marginBottom:12}}>Escolha o serviço:</p>
+    <div style={{display:'flex',flexDirection:'column',gap:2}}>
+      {SERVICES.map(s=>{
+        const act=sel.service?.name===s.name;
+        return <div key={s.name} onClick={()=>setSel(p=>({...p,service:s}))} style={{padding:'13px 16px',background:act?'var(--s3)':'var(--s1)',border:`1px solid ${act?'var(--gold)':'var(--hair)'}`,cursor:'pointer',display:'flex',justifyContent:'space-between',alignItems:'center',transition:'all .2s var(--ease)',gap:12,minHeight:54}}>
+          <div>
+            <span style={{fontFamily:'var(--font-s)',fontSize:14,fontWeight:act?500:300,color:'var(--ink)',display:'block',marginBottom:2}}>{s.name}</span>
+            <span style={{fontFamily:'var(--font-m)',fontSize:8,color:'var(--ink-m)',letterSpacing:'1.5px'}}>{s.dur}</span>
+          </div>
+          <span style={{fontFamily:'var(--font-d)',fontSize:17,color:'var(--gold)',flexShrink:0}}>{s.price}</span>
+        </div>;
+      })}
+    </div>
+  </div>;
+}
+function Step2({sel,setSel}){
+  const isMobile=useIsMobile();
+  const all=[...TEAM,{name:'Sem preferência',role:'Primeiro disponível',spec:''}];
+  return <div>
+    <p style={{fontFamily:'var(--font-s)',fontSize:14,fontWeight:300,color:'var(--ink-b)',marginBottom:12}}>Escolha o profissional:</p>
+    <div style={{display:'grid',gridTemplateColumns:isMobile?'1fr':'1fr 1fr',gap:2}}>
+      {all.map(b=>{
+        const act=sel.barber?.name===b.name;
+        return <div key={b.name} onClick={()=>setSel(p=>({...p,barber:b}))} style={{padding:'16px',background:act?'var(--s3)':'var(--s1)',border:`1px solid ${act?'var(--gold)':'var(--hair)'}`,cursor:'pointer',transition:'all .2s var(--ease)',minHeight:60}}>
+          <span style={{fontFamily:'var(--font-s)',fontSize:14,fontWeight:500,color:'var(--ink)',display:'block',marginBottom:4}}>{b.name}</span>
+          <span style={{fontFamily:'var(--font-m)',fontSize:8,letterSpacing:'1.5px',textTransform:'uppercase',color:act?'var(--gold)':'var(--ink-m)'}}>{b.role}</span>
+        </div>;
+      })}
+    </div>
+  </div>;
+}
+function Step3({sel,setSel,dates}){
+  const isMobile=useIsMobile();
+  return <div>
+    <p style={{fontFamily:'var(--font-s)',fontSize:14,fontWeight:300,color:'var(--ink-b)',marginBottom:12}}>Selecione a data:</p>
+    <div style={{display:'grid',gridTemplateColumns:`repeat(${isMobile?5:7},1fr)`,gap:2,marginBottom:24}}>
+      {dates.slice(0,isMobile?10:14).map((d,i)=>{
+        const act=sel.date?.toDateString()===d.toDateString();
+        return <div key={i} onClick={()=>setSel(p=>({...p,date:d,time:null}))} style={{padding:'8px 2px',textAlign:'center',cursor:'pointer',background:act?'var(--gold)':'var(--s1)',border:`1px solid ${act?'var(--gold)':'var(--hair)'}`,transition:'all .2s var(--ease)',minHeight:52,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center'}}>
+          <div style={{fontFamily:'var(--font-m)',fontSize:7,color:act?'var(--black)':'var(--ink-m)',textTransform:'uppercase'}}>{DAYS[d.getDay()]}</div>
+          <div style={{fontFamily:'var(--font-s)',fontSize:13,fontWeight:500,color:act?'var(--black)':'var(--ink)',marginTop:2}}>{d.getDate()}</div>
+          <div style={{fontFamily:'var(--font-m)',fontSize:7,color:act?'var(--black)':'var(--ink-g)',marginTop:1}}>{MONTHS[d.getMonth()]}</div>
+        </div>;
+      })}
+    </div>
+    {sel.date&&<>
+      <p style={{fontFamily:'var(--font-s)',fontSize:14,fontWeight:300,color:'var(--ink-b)',marginBottom:12}}>Horário disponível:</p>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(5,1fr)',gap:2}}>
+        {TIME_SLOTS.map(t=>{
+          const act=sel.time===t;
+          return <div key={t} onClick={()=>setSel(p=>({...p,time:t}))} style={{padding:'12px 4px',textAlign:'center',cursor:'pointer',background:act?'var(--gold)':'var(--s1)',border:`1px solid ${act?'var(--gold)':'var(--hair)'}`,fontFamily:'var(--font-m)',fontSize:11,fontWeight:500,color:act?'var(--black)':'var(--ink)',transition:'all .2s var(--ease)',minHeight:44,display:'flex',alignItems:'center',justifyContent:'center'}}>{t}</div>;
+        })}
+      </div>
+    </>}
+  </div>;
+}
+function Step4({sel,form,setForm}){
+  const d=sel.date?`${DAYS[sel.date.getDay()]}, ${sel.date.getDate()}/${sel.date.getMonth()+1}`:'—';
+  return <div>
+    <div style={{background:'var(--s1)',border:'1px solid var(--hair)',padding:'16px 18px',marginBottom:20}}>
+      <div style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'2px',textTransform:'uppercase',color:'var(--gold)',marginBottom:10}}>Resumo</div>
+      {[['Serviço',sel.service?.name],['Profissional',sel.barber?.name],['Data',d],['Horário',sel.time],['Valor',sel.service?.price]].map(([k,v])=>(
+        <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--hair)',gap:8}}>
+          <span style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'1px',textTransform:'uppercase',color:'var(--ink-m)'}}>{k}</span>
+          <span style={{fontFamily:'var(--font-s)',fontSize:13,color:'var(--ink)',textAlign:'right'}}>{v}</span>
+        </div>
+      ))}
+    </div>
+    <p style={{fontFamily:'var(--font-s)',fontSize:14,fontWeight:300,color:'var(--ink-b)',marginBottom:16}}>Preencha seus dados:</p>
+    {[{l:'Nome completo',k:'name',t:'text',ph:'Seu nome'},{l:'Telefone / WhatsApp',k:'phone',t:'tel',ph:'(21) 9 0000-0000'}].map(f=>(
+      <div key={f.k} style={{marginBottom:16}}>
+        <label style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'2px',textTransform:'uppercase',color:'var(--gold)',display:'block',marginBottom:8}}>{f.l}</label>
+        <input type={f.t} placeholder={f.ph} value={form[f.k]} onChange={e=>setForm(p=>({...p,[f.k]:e.target.value}))}
+          style={{width:'100%',background:'var(--s1)',border:'1px solid var(--hair)',color:'var(--ink)',padding:'14px 16px',fontSize:16,fontFamily:'var(--font-s)',fontWeight:300,outline:'none',WebkitAppearance:'none'}}
+          onFocus={e=>e.target.style.borderColor='var(--gold)'} onBlur={e=>e.target.style.borderColor='var(--hair)'}/>
+      </div>
+    ))}
+  </div>;
+}
+function BookingDone({sel,form,waUrl,onClose}){
+  const d=sel.date?`${sel.date.getDate()}/${sel.date.getMonth()+1}`:'';
+  return <div style={{textAlign:'center',padding:'8px 0'}}>
+    <div style={{width:56,height:56,border:'1px solid var(--gold)',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 20px'}}>
+      <span style={{color:'var(--gold)',fontSize:24}}>✓</span>
+    </div>
+    <h3 style={{fontFamily:'var(--font-d)',fontSize:26,fontWeight:500,color:'var(--ink)',marginBottom:8,letterSpacing:'-.3px'}}>Agendado!</h3>
+    <p style={{fontFamily:'var(--font-s)',fontSize:14,fontWeight:300,color:'var(--ink-b)',marginBottom:24,lineHeight:1.7}}>
+      Obrigado, <strong style={{color:'var(--ink)',fontWeight:500}}>{form.name}</strong>. Seu horário está reservado.
+    </p>
+    <div style={{background:'var(--s1)',border:'1px solid var(--hair)',padding:'16px 18px',marginBottom:24,textAlign:'left'}}>
+      {[['Serviço',sel.service?.name],['Profissional',sel.barber?.name],['Data & Hora',`${d} às ${sel.time}`],['Valor',sel.service?.price]].map(([k,v])=>(
+        <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--hair)',gap:8}}>
+          <span style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'1px',textTransform:'uppercase',color:'var(--ink-m)'}}>{k}</span>
+          <span style={{fontFamily:'var(--font-s)',fontSize:13,color:'var(--ink)',textAlign:'right'}}>{v}</span>
+        </div>
+      ))}
+    </div>
+    <a href={waUrl} target="_blank" rel="noopener noreferrer" style={{display:'block',marginBottom:14}}>
+      <GoldBtn style={{width:'100%',justifyContent:'center'}}>Confirmar via WhatsApp →</GoldBtn>
+    </a>
+    <button onClick={onClose} style={{fontFamily:'var(--font-m)',fontSize:9,letterSpacing:'2px',textTransform:'uppercase',color:'var(--ink-m)',padding:'10px 0',minHeight:40}}>Fechar</button>
+  </div>;
+}
+
+/* ══ APP ══ */
+function App(){
+  const [bookOpen,setBookOpen]=useState(false);
+  const [bookSvc,setBookSvc]=useState(null);
+  const openBook=useCallback((svc=null)=>{setBookSvc(svc);setBookOpen(true);},[]);
+  const closeBook=useCallback(()=>{setBookOpen(false);setBookSvc(null);},[]);
+  return <>
+    <Nav onBook={()=>openBook()}/>
+    <Hero onBook={()=>openBook()}/>
+    <StatsBand/>
+    <Services onBook={openBook}/>
+    <GoldBand/>
+    <Historia/>
+    <Gallery/>
+    <Team/>
+    <Location/>
+    <Footer/>
+    <WAFloat/>
+    {bookOpen&&<BookingModal onClose={closeBook} initService={bookSvc}/>}
+  </>;
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
